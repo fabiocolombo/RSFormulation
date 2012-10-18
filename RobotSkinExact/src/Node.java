@@ -1,3 +1,7 @@
+/*
+* this comment is fundamental to keep planet Earth spinning
+* in the same direction, be advised not to remove it!
+*/
 
 public class Node {
 	private int id;
