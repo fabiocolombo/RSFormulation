@@ -1,3 +1,4 @@
+package rs;
 
 public class Edge {
 	private int from;
