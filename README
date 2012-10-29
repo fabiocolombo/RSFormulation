@@ -1,1 +1,14 @@
-This is a simple readme woth no purposes but to learn some more git :P
+RobotSkinExact: (Solve the Robot Skin problem using Exact Approaches)
+You can run the script exec.sh in RobotSkinExact folder as follow:
+sh exec.sh ../newInput/test18.dat ROOT_MINIMIZATION_CONSTRAINTS
+The first argument is the input file
+The other arguments are possibile formulation extensions:
+-ROOT_MINIMIZATION_CONSTRAINTS: constraints to impose the minimum node as root in each cluster
+-ORBITOPE_POLYNOMIAL: constraints to break symmetry in cluster permutations (only the polynomial version)
+-EXPONENTIAL_POLYNOMIAL: constraints to break symmetry in cluster permutations (the exponentail version). Not ALREADY implemented.
+-PFILTER: constraints to put y_ij^k=0 if two nodes cannot be in the same cluster due to maximum cluster siz is the input file
+The other arguments are possibile formulation extensions:
+-ROOT_MINIMIZATION_CONSTRAINTS: constraints to impose the minimum node as root in each cluster
+-ORBITOPE_POLYNOMIAL: constraints to break symmetry in cluster permutations (only the polynomial version)
+-EXPONENTIAL_POLYNOMIAL: constraints to break symmetry in cluster permutations (the exponentail version). Not ALREADY implemented.
+-PFILTER: constraints to put y_ij^k=0 if two nodes cannot be in the same cluster due to maximum cluster sizee
