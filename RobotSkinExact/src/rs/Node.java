@@ -2,10 +2,10 @@ package rs;
 
 public class Node {
 	private int id;
-	private int x;
-	private int y;
+	private double x;
+	private double y;
 	
-	public Node(int id, int x, int y){
+	public Node(int id, double x, double y){
 		this.id=id;
 		this.x=x;
 		this.y=y;
@@ -15,11 +15,11 @@ public class Node {
 		return id;
 	}
 
-	public int getX() {
+	public double getX() {
 		return x;
 	}
 
-	public int getY() {
+	public double getY() {
 		return y;
 	}
 	

@@ -24,6 +24,7 @@ public class Instance {
 	private double dMax;
 	private double dMin;
 	private double d[][];
+	private double w1,w2,w3;
 	
 	private static List<Integer> parseIntegerTuple(String data){
 		StringTokenizer tkz=new StringTokenizer(data,"<> ");
@@ -31,6 +32,27 @@ public class Instance {
 		while(tkz.hasMoreTokens())
 			ris.add(new Integer(tkz.nextToken()));
 		return ris;
+	}
+	
+	private static List<Object> parseNodeTuple(String data){
+		StringTokenizer tkz=new StringTokenizer(data,"<> ");
+		List<Object> ris=new LinkedList<Object>();
+		ris.add(new Integer(tkz.nextToken()));
+		ris.add(new Double(tkz.nextToken()));
+		ris.add(new Double(tkz.nextToken()));		
+		return ris;
+	}
+	
+	private static List< List<Object> > parseNodeTuplesSet(String data){
+		List< List<Object> > tuples=new LinkedList< List<Object> >();
+		while(data.length()!=0){
+			int beg=data.indexOf('<');
+			int end=data.indexOf('>');
+			if(beg==-1) break;			
+			tuples.add(parseNodeTuple(data.substring(beg, end+1)));
+			data=data.substring(end+1);			
+		}
+		return tuples;
 	}
 	
 	private static List< List<Integer> > parseIntegerTuplesSet(String data){
@@ -86,18 +108,21 @@ public class Instance {
 		ins.maxClusterSize=Integer.parseInt(commands.get("C"));
 		ins.maxClusterNumber=Integer.parseInt(commands.get("MC"));
 		ins.lambda=Integer.parseInt(commands.get("lambda"));
-		List< List<Integer> > nodesData=parseIntegerTuplesSet(commands.get("nodes"));
+		ins.w1=Double.parseDouble(commands.get("w1"));
+		ins.w2=Double.parseDouble(commands.get("w2"));
+		ins.w3=Double.parseDouble(commands.get("w3"));
+		List< List<Object> > nodesData=parseNodeTuplesSet(commands.get("nodes"));
 		List< List<Integer> > edgesData=parseIntegerTuplesSet(commands.get("E"));		
 		ins.numNodes=nodesData.size();
 		ins.nodes=new Node[ins.numNodes];
 		ins.revMap=new HashMap<Integer,Integer>();
 		ins.outcut=new ArrayList< List<Integer> >(ins.numNodes);
 		int i=0;
-		for(List<Integer> tuple:nodesData){
-			Iterator<Integer> it=tuple.iterator();
-			int id=it.next();
-			int x=it.next();
-			int y=it.next();			
+		for(List<Object> tuple:nodesData){
+			Iterator<Object> it=tuple.iterator();
+			int id=(Integer) it.next();
+			double x=(Double) it.next();
+			double y=(Double) it.next();			
 			ins.revMap.put(id,i);
 			Node node=new Node(id,x,y);
 			ins.outcut.add(new LinkedList<Integer>());
@@ -184,15 +209,15 @@ public class Instance {
 	}
 	
 	public double getW1(){
-		return 1.0;
+		return w1;
 	}
 	
 	public double getW2(){
-		return 1.0;
+		return w2;
 	}
 	
 	public double getW3(){
-		return 1.0;
+		return w3;
 	}
 
 	public int getMaxClusterNumber() {
