@@ -134,7 +134,7 @@ public class Instance {
 			}
 		}
 		//Compute the ordered pairs set
-		ins.p=new HashSet<OrderedPair>();
+		ins.p=new TreeSet<OrderedPair>();
 		for(int ni=0;ni<ins.numNodes;++ni){
 			for(int nj=ni+1;nj<ins.numNodes;++nj){
 				ins.p.add(new OrderedPair(ni,nj));
@@ -161,33 +161,6 @@ public class Instance {
 		buf.append("};\n");
 		return buf.toString();
 		
-	}
-	
-	public static void main(String[] args) throws FileNotFoundException, IOException{
-		try{
-			if(args.length!=1){
-				System.out.println("Error, usage: solver pathname");
-				return;
-			}
-			File file=new File(args[0]);
-			if(!file.exists()){
-				System.out.println("Error, file "+file.getAbsolutePath()+" doesn't exists");
-				return;
-			}
-			Instance ins=parseInstance(file);
-			Solution sol=new Solution(ins);
-			long beg=System.currentTimeMillis();			
-			double obj=ILPSolver.solve(ins,sol);	
-			System.out.println("Elapsed Time:"+(System.currentTimeMillis() - beg)/1000.0);
-			sol.isFeasible(ins, obj);		
-			System.out.println("Optimal Solutin:");
-			System.out.println(sol);
-			System.out.println("Optimal Objective Value:");
-			System.out.println(obj);
-		}
-		catch(IloException e){
-			System.err.println("Raised exception:"+e.getMessage());			
-		}
 	}
 
 	public double getDMax() {
@@ -240,6 +213,36 @@ public class Instance {
 	
 	public List<Integer> getOutcut(int i){
 		return outcut.get(i);
+	}
+
+	public Set<OrderedPair> filterP() {
+		Set<OrderedPair> fp=new TreeSet<OrderedPair>();
+		//for each node do a bfs search
+		for(int i=0;i<getNumNodes();++i){		
+			boolean [] visited=new boolean[getNumNodes()]; //initialized at false by default
+			int[] d=new int[getNumNodes()];
+			Arrays.fill(d, Integer.MAX_VALUE);
+			d[i]=1;
+			visited[i]=true;
+			LinkedList<Integer> queue=new LinkedList<Integer>();			
+			queue.add(i);
+			while(!queue.isEmpty()){
+				int node=queue.pop();				
+				if(d[node]<=getMaxClusterSize() && i<node)
+					fp.add(new OrderedPair(i, node));
+				if(d[node]>getMaxClusterSize()){
+					break;
+				}
+				for(int j:getOutcut(node)){
+					if(visited[j]) continue;				
+					d[j]=d[i] + 1;
+					visited[j]=true;
+					queue.add(j);
+				}
+			}			
+		}
+		return fp;
+		
 	}
 	
 	

@@ -91,7 +91,7 @@ public class Solution {
 		StringBuilder sb=new StringBuilder();
 		for(List<Integer> cluster:clusters){
 			if(cluster.isEmpty()) continue;
-			sb.append(cluster.toString());
+			sb.append(cluster.toString()+"\n");
 		}
 		return sb.toString();
 	}

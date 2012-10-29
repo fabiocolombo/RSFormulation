@@ -1,13 +1,38 @@
 package rs;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import or.util.*;
 import util.FloatUtils;
 import ilog.concert.*;
 import ilog.cplex.*;
 
 public class ILPSolver {
+	public enum Extension{
+		ROOT_MINIMIZATION_CONSTRAINTS,
+		POLYNOMIAL_ORBITOPE,
+		EXPONENTIAL_ORBITOPE,
+		PFILTER
+	};
 	
-	public static double solve(Instance ins,Solution sol) throws IloException{		
+	private static EnumSet<Extension> extension=EnumSet.noneOf(Extension.class);
+	
+	public static void insertExtension(Extension e){
+		extension.add(e);
+	}
+	
+	public static void removeExtension(Extension e){
+		extension.remove(e);
+	}
+	
+	public static boolean isActiveExtension(Extension e){
+		return extension.contains(e);
+	}
+	
+	
+	
+	public static double solve(Instance ins,Solution sol) throws IloException{
 		IloCplex solver=new IloCplex();
 		BiIndexedIntVarMap x=new BiIndexedIntVarMap(solver, 0, 1, "x"); 		//(k,v)   (cluster,node)
 		IndexedNumVarMap dp=new IndexedNumVarMap(solver, 0, Double.MAX_VALUE, "dp");		    //(k)     (cluster)
@@ -110,8 +135,6 @@ public class ILPSolver {
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			for(int i=0;i<ins.getNumNodes();++i){
 				expr=solver.numExpr();
-				System.out.println("Outcut of node "+i);
-				System.out.println(ins.getOutcut(i));
 				for(Integer j:ins.getOutcut(i)){
 					expr=solver.diff(expr, f.get(k,i,j));
 					expr=solver.sum(expr, f.get(k,j,i));
@@ -149,6 +172,7 @@ public class ILPSolver {
 			solver.addGe(expr,0);			
 		}
 		
+		//y var definition constraints
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			for(OrderedPair p:ins.getP()){
 				expr=solver.numExpr();
@@ -157,6 +181,53 @@ public class ILPSolver {
 				expr=solver.diff(expr, x.get(k,p.j));
 				expr=solver.sum(expr,1);
 				solver.addGe(expr, 0);				
+			}
+		}
+		
+		if(isActiveExtension(Extension.ROOT_MINIMIZATION_CONSTRAINTS)){
+			for(int k=0;k<ins.getMaxClusterNumber();++k){
+				for(OrderedPair p: ins.getP()){					
+					expr=solver.sum(x.get(k,p.i),r.get(k,p.j));
+					solver.addLe(expr, 1);
+				}
+			}			
+		}
+		
+		if(isActiveExtension(Extension.POLYNOMIAL_ORBITOPE)){
+			//first family
+			for(int k=0;k<ins.getMaxClusterNumber();++k){
+				expr=solver.numExpr();
+				for(int v=0;v<=k-1;++v){
+					expr=solver.sum(expr,x.get(k,v));
+				}
+				solver.addEq(expr,0);
+			}
+			//second family
+			for(int k=1;k<ins.getMaxClusterNumber();++k){
+				for(int v=k;v<ins.getNumNodes();++v){
+					expr=solver.numExpr();
+					expr=solver.sum(expr,x.get(k, v));
+					for(int u=k-1;u<=v-1;++u){
+						expr=solver.diff(expr, x.get(k-1,u));
+					}
+					solver.addLe(expr, 0);
+				}
+			}			
+		}
+		
+		if(isActiveExtension(Extension.EXPONENTIAL_ORBITOPE)){
+			System.err.println("Extension "+Extension.EXPONENTIAL_ORBITOPE+" not implemented yet");
+			throw new IllegalArgumentException();
+		}
+		
+		if(isActiveExtension(Extension.PFILTER)){
+			Set<OrderedPair> fp=ins.filterP();
+			System.out.println(fp);
+			for(OrderedPair pa:ins.getP()){
+				if(!fp.contains(pa)){
+					System.out.println(pa);
+					solver.addEq(y.get(pa.i, pa.j), 0);
+				}
 			}
 		}
 		

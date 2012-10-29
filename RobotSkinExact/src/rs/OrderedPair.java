@@ -1,6 +1,6 @@
 package rs;
 
-public class OrderedPair {
+public class OrderedPair implements Comparable<OrderedPair> {
 	public int i;
 	public int j;
 	public OrderedPair(int ni, int nj) {
@@ -30,5 +30,18 @@ public class OrderedPair {
 			return false;
 		return true;
 	}
+	
+	public String toString(){
+		return "("+i+","+j+")";
+	}
+	@Override
+	public int compareTo(OrderedPair o) {
+		if(i < o.i) return -1;
+		if(i==o.i && j<o.j) return -1;
+		if(i==o.i && j==o.j) return 0;
+		return 1;
+	}
+	
+	
 	
 }
