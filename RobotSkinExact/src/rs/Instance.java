@@ -253,14 +253,15 @@ public class Instance {
 			queue.add(i);
 			while(!queue.isEmpty()){
 				int node=queue.pop();				
-				if(d[node]<=getMaxClusterSize() && i<node)
+				if(d[node]<=getMaxClusterSize() && i<node){
 					fp.add(new OrderedPair(i, node));
+				}
 				if(d[node]>getMaxClusterSize()){
 					break;
 				}
 				for(int j:getOutcut(node)){
 					if(visited[j]) continue;				
-					d[j]=d[i] + 1;
+					d[j]=d[node] + 1;
 					visited[j]=true;
 					queue.add(j);
 				}

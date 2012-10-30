@@ -8,6 +8,10 @@ C = 16; //maximum cluster size, must be C > 1
 MC = 2; //number of clusters
 lambda = 9; //target cluster size, must be 1 < l <= C
 
+w1=1000;
+w2=10;
+w3=1;
+
 //nodes in the form
 //< id x y >
 //where x and j are the euclidean coordinates

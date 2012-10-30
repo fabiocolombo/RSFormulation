@@ -2,6 +2,7 @@ package rs;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import or.util.*;
 import util.FloatUtils;
@@ -47,6 +48,12 @@ public class ILPSolver {
 		double w2=ins.getW2() / (ins.getLambda() * ins.getMaxClusterNumber());
 		double w3=2*ins.getW3() / (ins.getNumNodes() * (ins.getNumNodes() -1)*(ins.getDMax() - ins.getDMin()));
 		
+		Set<OrderedPair> fp=new TreeSet<OrderedPair>(ins.getP());		
+		if(isActiveExtension(Extension.PFILTER)){
+			fp=ins.filterP();
+			System.out.println("PFILTER: "+(ins.getP().size() - fp.size())+" pairs filtered");
+		}
+		
 		//compute the objective function expression
 		IloNumExpr expr=solver.numExpr();
 		
@@ -67,7 +74,7 @@ public class ILPSolver {
 		}
 		//O3
 		IloNumExpr exprO3=solver.numExpr();
-		for(OrderedPair p:ins.getP()){
+		for(OrderedPair p:fp){
 			double dmax=ins.getDMax();
 			double d=ins.getD(p.i,p.j);
 			IloNumVar yvar=y.get(p.i, p.j);
@@ -174,7 +181,7 @@ public class ILPSolver {
 		
 		//y var definition constraints
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
-			for(OrderedPair p:ins.getP()){
+			for(OrderedPair p:fp){
 				expr=solver.numExpr();
 				expr=solver.sum(expr,y.get(p.i,p.j));
 				expr=solver.diff(expr, x.get(k,p.i));
@@ -186,7 +193,7 @@ public class ILPSolver {
 		
 		if(isActiveExtension(Extension.ROOT_MINIMIZATION_CONSTRAINTS)){
 			for(int k=0;k<ins.getMaxClusterNumber();++k){
-				for(OrderedPair p: ins.getP()){					
+				for(OrderedPair p: fp){					
 					expr=solver.sum(x.get(k,p.i),r.get(k,p.j));
 					solver.addLe(expr, 1);
 				}
@@ -220,16 +227,7 @@ public class ILPSolver {
 			throw new IllegalArgumentException();
 		}
 		
-		if(isActiveExtension(Extension.PFILTER)){
-			Set<OrderedPair> fp=ins.filterP();
-			System.out.println(fp);
-			for(OrderedPair pa:ins.getP()){
-				if(!fp.contains(pa)){
-					System.out.println(pa);
-					solver.addEq(y.get(pa.i, pa.j), 0);
-				}
-			}
-		}
+
 		
 		solver.solve();
 		
