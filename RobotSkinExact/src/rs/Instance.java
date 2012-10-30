@@ -43,6 +43,47 @@ public class Instance {
 		return ris;
 	}
 	
+	private static List<Object> parseDstTuple(String data){
+		StringTokenizer tkz=new StringTokenizer(data,"<> ");
+		List<Object> ris=new LinkedList<Object>();
+		ris.add(new Integer(tkz.nextToken()));
+		ris.add(new Integer(tkz.nextToken()));
+		ris.add(new Double(tkz.nextToken()));		
+		return ris;
+	}
+	
+	private static List<Integer> parseArcTuple(String data){
+		StringTokenizer tkz=new StringTokenizer(data,"<> ");
+		List<Integer> ris=new LinkedList<Integer>();
+		ris.add(new Integer(tkz.nextToken()));
+		ris.add(new Integer(tkz.nextToken()));				
+		return ris;
+	}
+	
+	private static List< List<Integer> > parseArcTuplesSet(String data){
+		List< List<Integer> > tuples=new LinkedList< List<Integer> >();
+		while(data.length()!=0){
+			int beg=data.indexOf('<');
+			int end=data.indexOf('>');
+			if(beg==-1) break;			
+			tuples.add(parseArcTuple(data.substring(beg, end+1)));
+			data=data.substring(end+1);			
+		}
+		return tuples;
+	}
+	
+	private static List< List<Object> > parseDstTuplesSet(String data){
+		List< List<Object> > tuples=new LinkedList< List<Object> >();
+		while(data.length()!=0){
+			int beg=data.indexOf('<');
+			int end=data.indexOf('>');
+			if(beg==-1) break;			
+			tuples.add(parseDstTuple(data.substring(beg, end+1)));
+			data=data.substring(end+1);			
+		}
+		return tuples;
+	}
+	
 	private static List< List<Object> > parseNodeTuplesSet(String data){
 		List< List<Object> > tuples=new LinkedList< List<Object> >();
 		while(data.length()!=0){
@@ -101,16 +142,125 @@ public class Instance {
 		return ris;
 	}
 	
-	public static Instance parseInstance(File file) throws IOException{
+	public static Instance parseInstanceOld(File file) throws IOException{
+		FileInputStream fis=new FileInputStream(file);
+		Map<String,String> commands=extractCommands(removeComments(fis));
+		Instance ins=new Instance();
+		ins.maxClusterSize=Integer.parseInt(commands.get("CMAX"));
+		ins.maxClusterNumber=Integer.parseInt(commands.get("numberOfControllers"));
+		if(commands.get("lambda")!=null)
+			ins.lambda=Integer.parseInt(commands.get("lambda"));
+		else
+			ins.lambda=Integer.parseInt(commands.get("lamdbda"));
+		ins.revMap=new HashMap<Integer,Integer>();
+		String w1=commands.get("w1");
+		if(w1==null){
+			ins.w1=1000;
+			System.err.println("Unable to read w1 value: using "+ins.w1);
+		}
+		else
+			ins.w1=Double.parseDouble(w1);
+		String w2=commands.get("w2");
+		if(w2==null){
+			ins.w2=10;
+			System.err.println("Unable to read w2 value: using "+ins.w2);
+		}
+		else
+			ins.w2=Double.parseDouble(w2);
+		String w3=commands.get("w3");
+		if(w3==null){
+			ins.w3=1;
+			System.err.println("Unable to read w3 value: using "+ins.w3);
+		}
+		else
+			ins.w3=Double.parseDouble(w3);
+		ins.numNodes=Integer.parseInt(commands.get("n"));
+		ins.nodes=new Node[ins.numNodes];
+		ins.outcut=new ArrayList< List<Integer> >(ins.numNodes);
+		for(int i=0;i<ins.numNodes;++i){
+			ins.nodes[i]=new Node(i,-1,-1);
+			ins.revMap.put(i+1,i);
+			ins.outcut.add(new LinkedList<Integer>());
+		}
+		
+		List< List<Integer> > arcsData=parseArcTuplesSet(commands.get("Arcs"));
+		ins.edges=new LinkedList<Edge>();
+		for(List<Integer> t:arcsData){
+			int from=t.get(0);
+			int to=t.get(1);
+			if(from > to) continue;
+			int fromId=ins.revMap.get(from);
+			int toId=ins.revMap.get(to);
+			Edge e=new Edge(fromId, toId);
+			ins.edges.add(e);
+			ins.outcut.get(fromId).add(toId);
+			ins.outcut.get(toId).add(fromId);
+		}
+		
+		
+		
+		
+		List< List<Object> > dstData=parseDstTuplesSet(commands.get("Dst"));
+		ins.d=new double[ins.numNodes][];
+		for(int ni=0;ni<ins.numNodes;++ni){
+			ins.d[ni]=new double[ins.numNodes];
+			Arrays.fill(ins.d[ni], Integer.MAX_VALUE);
+		}		
+		ins.dMax=0;
+		ins.dMin=Double.MAX_VALUE;
+		
+		for( List<Object> t: dstData){
+			int from=(Integer) t.get(0);
+			int to=(Integer) t.get(1);
+			double dst=(Double) t.get(2);
+			int ni=ins.revMap.get(from);
+			int nj=ins.revMap.get(to);
+			ins.d[ni][nj]=ins.d[ni][nj]=dst;
+			ins.dMax=Math.max(ins.dMax, ins.d[ni][nj]);
+			ins.dMin=Math.min(ins.dMin, ins.d[ni][nj]);			
+		}
+		
+		//Compute the ordered pairs set
+		ins.p=new TreeSet<OrderedPair>();
+		for(int ni=0;ni<ins.numNodes;++ni){
+			for(int nj=ni+1;nj<ins.numNodes;++nj){
+				ins.p.add(new OrderedPair(ni,nj));
+			}
+		}
+			
+		
+		return ins;
+		
+	}
+	
+	public static Instance parseInstanceNew(File file) throws IOException{
 		FileInputStream fis=new FileInputStream(file);
 		Map<String,String> commands=extractCommands(removeComments(fis));
 		Instance ins=new Instance();
 		ins.maxClusterSize=Integer.parseInt(commands.get("C"));
 		ins.maxClusterNumber=Integer.parseInt(commands.get("MC"));
 		ins.lambda=Integer.parseInt(commands.get("lambda"));
-		ins.w1=Double.parseDouble(commands.get("w1"));
-		ins.w2=Double.parseDouble(commands.get("w2"));
-		ins.w3=Double.parseDouble(commands.get("w3"));
+		String w1=commands.get("w1");
+		if(w1==null){
+			ins.w1=1000;
+			System.err.println("Unable to read w1 value: using "+ins.w1);
+		}
+		else
+			ins.w1=Double.parseDouble(w1);
+		String w2=commands.get("w2");
+		if(w2==null){
+			ins.w2=10;
+			System.err.println("Unable to read w2 value: using "+ins.w2);
+		}
+		else
+			ins.w2=Double.parseDouble(w2);
+		String w3=commands.get("w3");
+		if(w3==null){
+			ins.w3=1;
+			System.err.println("Unable to read w3 value: using "+ins.w3);
+		}
+		else
+			ins.w3=Double.parseDouble(w3);
 		List< List<Object> > nodesData=parseNodeTuplesSet(commands.get("nodes"));
 		List< List<Integer> > edgesData=parseIntegerTuplesSet(commands.get("E"));		
 		ins.numNodes=nodesData.size();

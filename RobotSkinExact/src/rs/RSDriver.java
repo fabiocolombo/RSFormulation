@@ -10,15 +10,16 @@ public class RSDriver {
 
 	public static void main(String[] args) throws FileNotFoundException, IOException{
 		try{
-			if(args.length<1){
-				System.out.println("Error, usage: solver pathname [formulations extension specifications]");
+			if(args.length<2){
+				System.out.println("Error, usage: solver format pathname [formulations extension specifications]");
+				System.out.println("Available format: OLD NEW");
 				System.out.println("Available formulations extensions:");
 				for(ILPSolver.Extension e:ILPSolver.Extension.values()){
 					System.out.println(e.name());
 				}
 				return;
 			}
-			for(int i=1;i<args.length;++i){
+			for(int i=2;i<args.length;++i){
 				try{
 					ILPSolver.Extension ext=ILPSolver.Extension.valueOf(args[i]);
 					ILPSolver.insertExtension(ext);
@@ -27,12 +28,22 @@ public class RSDriver {
 				}			
 			}
 			
-			File file=new File(args[0]);
+			File file=new File(args[1]);
 			if(!file.exists()){
 				System.out.println("Error, file "+file.getAbsolutePath()+" doesn't exists");
 				return;
 			}
-			Instance ins=Instance.parseInstance(file);
+			Instance ins=null;
+			if(args[0].equals("OLD"))
+				ins=Instance.parseInstanceOld(file);
+			else if(args[0].equals("NEW"))
+				ins=Instance.parseInstanceNew(file);
+			else{
+				System.err.println("Invalid format: "+args[0]);
+				return;
+			}
+			System.out.println("Finished Instance Parsing.");
+			System.out.println("Number of nodes:"+ins.getNumNodes());
 			Solution sol=new Solution(ins);
 			long beg=System.currentTimeMillis();			
 			double obj=ILPSolver.solve(ins,sol);	
