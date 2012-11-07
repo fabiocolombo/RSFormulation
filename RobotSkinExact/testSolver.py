@@ -40,6 +40,5 @@ for p in listDati:
     sp.wait()    
     of.close()
     risFile=open(outputPath,"r")
-    print("state="+state)  
 
 print("done!")
