@@ -53,7 +53,7 @@ public class RSDriver {
 				return;
 			}
 			System.out.println("Finished Instance Parsing.");
-			System.out.println("Number of nodes:"+ins.getNumNodes());
+			System.out.println("NODES="+ins.getNumNodes());
 			Solution sol=new Solution(ins);
 			long beg=System.currentTimeMillis();			
 			double obj=solver.solve(ins,sol,timeout);

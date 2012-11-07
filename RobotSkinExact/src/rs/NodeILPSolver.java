@@ -87,7 +87,7 @@ public class NodeILPSolver extends ILPSolver {
 				if(pl.get(l).contains(i))
 					expr=solver.sum(expr,x.get(l, i));
 			}
-			System.out.println(solver.addLe(expr, 1));
+			solver.addLe(expr, 1);
 		}
 		
 		//nodes -> root linking constraints
@@ -193,7 +193,6 @@ public class NodeILPSolver extends ILPSolver {
 		System.out.println("NN="+solver.getNnodes());
 		System.out.println("LB="+solver.getBestObjValue());
 		
-		x.printNonNegative(solver);
 		//If we have a feasible solution we save it
 		if(solver.getStatus() == IloCplex.Status.Feasible || solver.getStatus() == IloCplex.Status.Optimal){		
 			int k=0;
