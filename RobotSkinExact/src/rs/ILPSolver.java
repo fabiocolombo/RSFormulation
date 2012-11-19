@@ -9,7 +9,9 @@ public abstract class ILPSolver {
 		ROOT_MINIMIZATION_CONSTRAINTS,
 		POLYNOMIAL_ORBITOPE,
 		EXPONENTIAL_ORBITOPE,
-		PFILTER
+		PFILTER,
+		ROOT_BRANCHING_PRIORITY,
+		FLOW_LB
 	};
 	
 	private static EnumSet<Extension> extension=EnumSet.noneOf(Extension.class);

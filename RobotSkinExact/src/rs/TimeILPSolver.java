@@ -107,8 +107,8 @@ public class TimeILPSolver extends ILPSolver {
 			expr=solver.numExpr();
 			for(int i=0;i<ins.getNumNodes();++i){
 				expr=solver.sum(expr,r.get(k, i));
-			}
-			solver.addEq(expr,1);
+			}			
+			solver.addLe(expr,1);
 		}
 		
 		//cardinality constraints
@@ -119,7 +119,7 @@ public class TimeILPSolver extends ILPSolver {
 			}
 			solver.addLe(expr, ins.getMaxClusterSize());
 		}
-//		
+		
 		//timestamps definition constraints
 		for(int i=0;i<ins.getNumNodes();++i){
 			for(int j:ins.getOutcut(i)){
@@ -213,10 +213,12 @@ public class TimeILPSolver extends ILPSolver {
 		}
 		
 		solver.setParam(IloCplex.DoubleParam.TiLim, timeout);
-		//Add branching priorities to the root variables
-		for(int k=0;k<ins.getMaxClusterNumber();++k)			
-			for(int i=0;i<ins.getNumNodes();++i)
-				solver.setPriority(r.get(k,i), 100);	
+		if(isActiveExtension(Extension.ROOT_BRANCHING_PRIORITY)){
+			//Add branching priorities to the root variables
+			for(int k=0;k<ins.getMaxClusterNumber();++k)			
+				for(int i=0;i<ins.getNumNodes();++i)
+					solver.setPriority(r.get(k,i), 100);			
+		}
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());
@@ -233,11 +235,11 @@ public class TimeILPSolver extends ILPSolver {
 			}
 		}
 		
-		x.printNonNegative(solver);
-		r.printNonNegative(solver);
-		u.printNonNegative(solver);
-		dp.printNonNegative(solver);
-		dm.printNonNegative(solver);
+//		x.printNonNegative(solver);
+//		r.printNonNegative(solver);
+//		u.printNonNegative(solver);
+//		dp.printNonNegative(solver);
+//		dm.printNonNegative(solver);
 
 		return solver.getObjValue();
 	}

@@ -16,7 +16,7 @@ public class Instance {
 	private Node[] nodes;
 	private Map<Integer,Integer> revMap;
 	private List<Edge> edges;
-	private ArrayList< List<Integer> > outcut;
+	private ArrayList< Set<Integer> > outcut;
 	private Set<OrderedPair> p;
 	private int maxClusterSize;
 	private int maxClusterNumber;
@@ -176,11 +176,11 @@ public class Instance {
 			ins.w3=Double.parseDouble(w3);
 		ins.numNodes=Integer.parseInt(commands.get("n"));
 		ins.nodes=new Node[ins.numNodes];
-		ins.outcut=new ArrayList< List<Integer> >(ins.numNodes);
+		ins.outcut=new ArrayList< Set<Integer> >(ins.numNodes);
 		for(int i=0;i<ins.numNodes;++i){
 			ins.nodes[i]=new Node(i,-1,-1);
 			ins.revMap.put(i+1,i);
-			ins.outcut.add(new LinkedList<Integer>());
+			ins.outcut.add(new HashSet<Integer>());
 		}
 		
 		List< List<Integer> > arcsData=parseArcTuplesSet(commands.get("Arcs"));
@@ -195,10 +195,7 @@ public class Instance {
 			ins.edges.add(e);
 			ins.outcut.get(fromId).add(toId);
 			ins.outcut.get(toId).add(fromId);
-		}
-		
-		
-		
+		}		
 		
 		List< List<Object> > dstData=parseDstTuplesSet(commands.get("Dst"));
 		ins.d=new double[ins.numNodes][];
@@ -266,7 +263,7 @@ public class Instance {
 		ins.numNodes=nodesData.size();
 		ins.nodes=new Node[ins.numNodes];
 		ins.revMap=new HashMap<Integer,Integer>();
-		ins.outcut=new ArrayList< List<Integer> >(ins.numNodes);
+		ins.outcut=new ArrayList< Set<Integer> >(ins.numNodes);
 		int i=0;
 		for(List<Object> tuple:nodesData){
 			Iterator<Object> it=tuple.iterator();
@@ -275,7 +272,7 @@ public class Instance {
 			double y=(Double) it.next();			
 			ins.revMap.put(id,i);
 			Node node=new Node(id,x,y);
-			ins.outcut.add(new LinkedList<Integer>());
+			ins.outcut.add(new HashSet<Integer>());
 			ins.nodes[i++]=node;			
 		}		
 		ins.edges=new LinkedList<Edge>();
@@ -386,7 +383,7 @@ public class Instance {
 		return maxClusterSize;
 	}
 	
-	public List<Integer> getOutcut(int i){
+	public Set<Integer> getOutcut(int i){
 		return outcut.get(i);
 	}
 

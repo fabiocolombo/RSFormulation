@@ -76,10 +76,11 @@ public class GroupILPSolver extends ILPSolver{
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			expr=solver.numExpr();
 			for(int i=0;i<ins.getNumNodes();++i){
-				expr=solver.sum(expr,x.get(k,i));
+				//expr=solver.sum(expr,x.get(k,i));
 				expr=solver.diff(expr,solver.prod(ins.getMaxClusterSize(), r.get(k, i)));				
 			}
 			solver.addLe(expr, 0);
+			//solver.addLe(expr, ins.getMaxClusterSize());
 		}
 		
 		//root uniqueness constraints
@@ -208,8 +209,27 @@ public class GroupILPSolver extends ILPSolver{
 			throw new IllegalArgumentException();
 		}
 		
+		if(isActiveExtension(Extension.FLOW_LB)){
+			//f,x lower bound
+			for(int k=0;k<ins.getMaxClusterNumber();++k){
+				for(int i=0;i<ins.getNumNodes();++i){
+					expr=solver.numExpr();
+					for(Integer j:ins.getOutcut(i)){
+						expr=solver.sum(expr,f.get(k, j, i));					
+					}
+					solver.addGe(expr,x.get(k, i));
+				}
+			}
+		}
+		
 
 		solver.setParam(IloCplex.DoubleParam.TiLim, timeout);
+		if(isActiveExtension(Extension.ROOT_BRANCHING_PRIORITY)){
+			//Add branching priorities to the root variables
+			for(int k=0;k<ins.getMaxClusterNumber();++k)			
+				for(int i=0;i<ins.getNumNodes();++i)
+					solver.setPriority(r.get(k,i), 100);			
+		}
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());

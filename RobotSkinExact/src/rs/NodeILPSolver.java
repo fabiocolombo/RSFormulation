@@ -187,6 +187,25 @@ public class NodeILPSolver extends ILPSolver {
 			}
 		}
 		
+		if(isActiveExtension(Extension.ROOT_BRANCHING_PRIORITY)){
+			//Add branching priorities to the root variables
+			for(int l=0;l<ins.getNumNodes();++l)
+					solver.setPriority(x.get(l,l), 100);			
+		}
+		
+		if(isActiveExtension(Extension.FLOW_LB)){
+			//f,x lower bound
+			for(int l=0;l<ins.getNumNodes();++l){
+				for(int i=0;i<ins.getNumNodes();++i){
+					expr=solver.numExpr();
+					for(Integer j:ins.getOutcut(i)){
+						expr=solver.sum(expr,f.get(l, j, i));					
+					}
+					solver.addGe(expr,x.get(l, i));
+				}
+			}
+		}
+		
 		solver.setParam(IloCplex.DoubleParam.TiLim, timeout);
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
