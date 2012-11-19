@@ -196,10 +196,13 @@ public class NodeILPSolver extends ILPSolver {
 		if(isActiveExtension(Extension.FLOW_LB)){
 			//f,x lower bound
 			for(int l=0;l<ins.getNumNodes();++l){
-				for(int i=0;i<ins.getNumNodes();++i){
+				for(int i:pl.get(l)){
+					if(i==l) continue;
 					expr=solver.numExpr();
 					for(Integer j:ins.getOutcut(i)){
-						expr=solver.sum(expr,f.get(l, j, i));					
+						if( pl.get(l).contains(j)){
+							expr=solver.sum(expr,f.get(l, j, i));	
+						}
 					}
 					solver.addGe(expr,x.get(l, i));
 				}
@@ -215,9 +218,10 @@ public class NodeILPSolver extends ILPSolver {
 		//If we have a feasible solution we save it
 		if(solver.getStatus() == IloCplex.Status.Feasible || solver.getStatus() == IloCplex.Status.Optimal){		
 			int k=0;
-			for(int l=0;l<ins.getNumNodes();++l){
+			for(int l=0;l<ins.getNumNodes();++l){				
 				if(FloatUtils.eq(solver.getValue(x.get(l, l)), 0.0)) continue;			
 				for(int v=l;v<ins.getNumNodes();++v){
+					if(!pl.get(l).contains(v)) continue;
 					if(FloatUtils.eq(solver.getValue(x.get(l,v)),1.0)){
 						sol.insert(k, v);
 					}
