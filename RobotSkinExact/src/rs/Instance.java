@@ -414,8 +414,21 @@ public class Instance {
 				}
 			}			
 		}
-		return fp;
-		
+		return fp;		
+	}
+	
+	public String toGraphVizDot(){
+		StringBuilder sb=new StringBuilder();
+		sb.append("graph "+this.getNumNodes()+"{\n");		
+		//add edges
+		for(int i=0;i<this.getNumNodes();++i){
+			for(int j:this.getOutcut(i)){
+				if(j<i) continue;
+				sb.append(i+"--"+j+";\n");
+			}
+		}
+		sb.append("}");
+		return sb.toString();
 	}
 	
 	

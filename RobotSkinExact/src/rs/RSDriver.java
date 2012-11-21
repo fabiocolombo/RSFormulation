@@ -4,7 +4,9 @@ import ilog.concert.IloException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 
 public class RSDriver {
 
@@ -44,6 +46,11 @@ public class RSDriver {
 				System.err.println("Invalid format: "+args[1]);
 				return;			
 			}
+			String insDotPath=args[2]+"_ins.dot";
+			System.out.println("Saving ins in .dot format on "+insDotPath+"...");
+			PrintStream ostream=new PrintStream(insDotPath);
+			ostream.println(ins.toGraphVizDot());
+			ostream.close();
 			String className="rs."+args[0]+"ILPSolver";
 			ILPSolver solver=null;
 			try{
@@ -67,6 +74,11 @@ public class RSDriver {
 			System.out.println(sol);
 			System.out.println("Optimal Objective Value:");
 			System.out.println(obj);
+			String solDotPath=args[2]+"_solution.dot";
+			System.out.println("Saving solution in .dot format on "+solDotPath+"...");
+			ostream=new PrintStream(solDotPath);
+			ostream.println(sol.toGraphVizDot());
+			ostream.close();
 		}
 		catch(IloException e){
 			System.err.println("Raised exception:"+e.getMessage());			

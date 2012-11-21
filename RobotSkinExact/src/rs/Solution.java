@@ -5,8 +5,19 @@ import util.FloatUtils;
 
 public class Solution {
 	private ArrayList< List<Integer> > clusters;
+	private Instance ins;
+	
+	private int getClusterIndex(int node){
+		for(int i=0;i<clusters.size();++i){
+//			System.out.println(clusters.get(i)+" contains "+node+"?");
+			if(clusters.get(i).contains(node))
+				return i;
+		}
+		return -1;
+	}
 	
 	public Solution(Instance ins){
+		this.ins=ins;
 		clusters=new ArrayList< List<Integer> >(ins.getNumNodes());
 		for(int i=0;i<ins.getNumNodes();++i){
 			clusters.add(new LinkedList<Integer>());
@@ -93,6 +104,28 @@ public class Solution {
 			if(cluster.isEmpty()) continue;
 			sb.append(cluster.toString()+"\n");
 		}
+		return sb.toString();
+	}
+	
+	public String toGraphVizDot(){
+		StringBuilder sb=new StringBuilder();
+		sb.append("graph "+ins.getNumNodes()+"{\n");
+		//add nodes
+		for(int i=0;i<ins.getNumNodes();++i){
+			int index=getClusterIndex(i)+1;
+			if(index!=-1)
+				sb.append(i+" [style=filled, colorscheme=paired12, color="+index+"];\n");
+			else
+				sb.append(i+";\n");
+		}
+		//add edges
+		for(int i=0;i<ins.getNumNodes();++i){
+			for(int j:ins.getOutcut(i)){
+				if(j<i) continue;
+				sb.append(i+"--"+j+";\n");
+			}
+		}
+		sb.append("}");
 		return sb.toString();
 	}
 	
