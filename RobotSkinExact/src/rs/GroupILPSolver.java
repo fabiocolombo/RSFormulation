@@ -72,16 +72,16 @@ public class GroupILPSolver extends ILPSolver{
 			solver.addLe(expr, 1);
 		}
 		
-		//x,r linking constraints
-		for(int k=0;k<ins.getMaxClusterNumber();++k){
-			expr=solver.numExpr();
-			for(int i=0;i<ins.getNumNodes();++i){
-				//expr=solver.sum(expr,x.get(k,i));
-				expr=solver.diff(expr,solver.prod(ins.getMaxClusterSize(), r.get(k, i)));				
-			}
-			solver.addLe(expr, 0);
-			//solver.addLe(expr, ins.getMaxClusterSize());
-		}
+//		//x,r linking constraints
+//		for(int k=0;k<ins.getMaxClusterNumber();++k){
+//			expr=solver.numExpr();
+//			for(int i=0;i<ins.getNumNodes();++i){
+//				//expr=solver.sum(expr,x.get(k,i));
+//				expr=solver.diff(expr,solver.prod(ins.getMaxClusterSize(), r.get(k, i)));				
+//			}
+//			solver.addLe(expr, 0);
+//			//solver.addLe(expr, ins.getMaxClusterSize());
+//		}
 		
 		//root uniqueness constraints
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
