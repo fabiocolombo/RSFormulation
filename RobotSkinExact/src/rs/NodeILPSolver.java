@@ -6,10 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import ilog.concert.IloException;
-import ilog.concert.IloNumExpr;
-import ilog.concert.IloNumVar;
-import ilog.concert.IloObjectiveSense;
+import ilog.concert.*;
 import ilog.cplex.IloCplex;
 import or.util.BiIndexedIntVarMap;
 import or.util.BiIndexedNumVarMap;
@@ -77,7 +74,7 @@ public class NodeILPSolver extends ILPSolver {
 			IloNumVar yvar=y.get(p.i, p.j);
 			exprO3=solver.sum(exprO3,solver.prod(w3*(dmax-d),yvar));
 		}
-		expr=solver.sum(exprO1,solver.sum(exprO2,exprO3));
+		expr=solver.sum(exprO1,exprO2,exprO3);
 		solver.add(solver.objective(IloObjectiveSense.Minimize,expr));
 		
 		//packing constraints

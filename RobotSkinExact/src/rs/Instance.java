@@ -388,6 +388,7 @@ public class Instance {
 	}
 
 	public Set<OrderedPair> filterP() {
+		System.out.println("Init filtering....");
 		Set<OrderedPair> fp=new TreeSet<OrderedPair>();
 		//for each node do a bfs search
 		for(int i=0;i<getNumNodes();++i){		
@@ -414,6 +415,7 @@ public class Instance {
 				}
 			}			
 		}
+		System.out.println("Filtering finished");
 		return fp;		
 	}
 	

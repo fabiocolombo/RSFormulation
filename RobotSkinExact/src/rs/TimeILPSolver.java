@@ -23,30 +23,12 @@ public class TimeILPSolver extends ILPSolver {
 			throws IloException {
 		IloCplex solver=new IloCplex();
 		TriIndexedIntVarMap x=new TriIndexedIntVarMap(solver, 0, 1, "x"); 						//(k,v)   (cluster,tail,head)		
-		BiIndexedIntVarMap r=new BiIndexedIntVarMap(solver, 0, 1, "r");							//(k,i)   (cluster,node)
-		IndexedNumVarMap dp=new IndexedNumVarMap(solver, 0, Double.MAX_VALUE, "dp");		    //(k)     (cluster)
-		IndexedNumVarMap dm=new IndexedNumVarMap(solver, 0, Double.MAX_VALUE, "dm");		    //(k)     (cluster)			
-		BiIndexedNumVarMap y=new BiIndexedNumVarMap(solver, 0, 1, "y");							//(i,j)   (node1<node2)
+		BiIndexedNumVarMap y=new BiIndexedNumVarMap(solver, 0, Double.MAX_VALUE, "y");			//(k,i)   (cluster,node)
+		IndexedNumVarMap d=new IndexedNumVarMap(solver, 0, Double.MAX_VALUE, "d");		    	//(k)     (cluster)			
+		BiIndexedNumVarMap w=new BiIndexedNumVarMap(solver, 0, Double.MAX_VALUE, "w");			//(i,j)   (node1<node2)
 		IndexedNumVarMap u=new IndexedNumVarMap(solver, 0, Double.MAX_VALUE, "u");				//(i)	  (node)
-		
-		//Build expressions denoting the usage of a node in a group
-		IloNumExpr nodeUsage[][]=new IloNumExpr[ins.getMaxClusterNumber()][ins.getNumNodes()];
-		for(int k=0;k<ins.getMaxClusterNumber();++k){
-			for(int v=0;v<ins.getNumNodes();++v){
-				nodeUsage[k][v]=solver.numExpr();
-				for(int j:ins.getOutcut(v))
-					nodeUsage[k][v]=solver.sum(nodeUsage[k][v],x.get(k,j,v));
-				nodeUsage[k][v]=solver.sum(nodeUsage[k][v],r.get(k,v));
-			}
-		}
-		//Build denoting the coverage of a node
-		IloNumExpr coverage[]=new IloNumExpr[ins.getNumNodes()];
-		for(int v=0;v<ins.getNumNodes();++v){
-			coverage[v]=solver.numExpr();
-			for(int k=0;k<ins.getMaxClusterNumber();++k)
-				coverage[v]=solver.sum(coverage[v],nodeUsage[k][v]);
-		}
-		
+		int superRoot=ins.getNumNodes();
+				
 		
 		//compute the weights of the objective function
 		double w1=ins.getW1() / ins.getNumNodes();
@@ -64,30 +46,51 @@ public class TimeILPSolver extends ILPSolver {
 		IloNumExpr expr=solver.numExpr();
 		
 		//O1
+		System.out.println("w1="+w1);
 		IloNumExpr exprO1=solver.numExpr();
 		for(int i=0;i<ins.getNumNodes();++i){
-			exprO1=solver.sum(exprO1,solver.prod(w1, solver.diff(1, coverage[i])));			
+			expr=solver.sum(solver.numExpr(),1);			
+			for(int k=0;k<ins.getMaxClusterNumber();++k){
+				expr=solver.diff(expr,y.get(k,i));				
+			}
+			exprO1=solver.sum(exprO1,solver.prod(w1,expr));
 		}
+		System.out.println(exprO1);
 		//O2
 		IloNumExpr exprO2=solver.numExpr();
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
-			exprO2=solver.sum(exprO2,solver.prod(w2,dm.get(k)));
-			exprO2=solver.sum(exprO2,solver.prod(w2,dp.get(k)));
+			exprO2=solver.sum(exprO2,solver.prod(w2,d.get(k)));
 		}
 		//O3
 		IloNumExpr exprO3=solver.numExpr();
 		for(OrderedPair p:fp){
 			double dmax=ins.getDMax();
-			double d=ins.getD(p.i,p.j);
-			IloNumVar yvar=y.get(p.i, p.j);
-			exprO3=solver.sum(exprO3,solver.prod(w3*(dmax-d),yvar));
+			double dist=ins.getD(p.i,p.j);
+			IloNumVar wvar=w.get(p.i, p.j);
+			exprO3=solver.sum(exprO3,solver.prod(w3*(dmax-dist),wvar));
 		}
 		expr=solver.sum(exprO1,exprO2,exprO3);					
 		solver.add(solver.objective(IloObjectiveSense.Minimize,expr));
 		
+		//node definition constraints
+		for(int k=0;k<ins.getMaxClusterNumber();++k){
+			for(int v=0;v<ins.getNumNodes();++v){
+				expr=solver.numExpr();
+				expr=solver.sum(expr,x.get(k,superRoot,v));
+				for(int i:ins.getOutcut(v)){
+					expr=solver.sum(expr,x.get(k,i,v));
+				}
+				solver.addEq(expr,y.get(k,v));
+			}
+		}
+		
 		//packing constraints
-		for(int i=0;i<ins.getNumNodes();++i){			
-			solver.addLe(coverage[i],1);
+		for(int i=0;i<ins.getNumNodes();++i){
+			expr=solver.numExpr();
+			for(int k=0;k<ins.getMaxClusterNumber();++k){
+				expr=solver.sum(expr,y.get(k, i));
+			}
+			solver.addLe(expr,1);
 		}
 		
 		//arc precedence constraints
@@ -95,9 +98,9 @@ public class TimeILPSolver extends ILPSolver {
 			for(int i=0;i<ins.getNumNodes();++i){
 				for(int j:ins.getOutcut(i)){
 					//precedence for arc (i,j)					
-					solver.addLe(x.get(k, i, j), nodeUsage[k][i]);
+					solver.addLe(x.get(k, i, j), y.get(k,i));
 					//precedence for arc (j,i)					
-					solver.addLe(x.get(k, j, i), nodeUsage[k][j]);
+					solver.addLe(x.get(k, j, i), y.get(k,j));
 				}
 			}		
 		}
@@ -106,7 +109,7 @@ public class TimeILPSolver extends ILPSolver {
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			expr=solver.numExpr();
 			for(int i=0;i<ins.getNumNodes();++i){
-				expr=solver.sum(expr,r.get(k, i));
+				expr=solver.sum(expr,x.get(k,superRoot,i));
 			}			
 			solver.addLe(expr,1);
 		}
@@ -115,7 +118,7 @@ public class TimeILPSolver extends ILPSolver {
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			expr=solver.numExpr();
 			for(int i=0;i<ins.getNumNodes();++i){				
-				expr=solver.sum(expr,nodeUsage[k][i]);
+				expr=solver.sum(expr,y.get(k,i));
 			}
 			solver.addLe(expr, ins.getMaxClusterSize());
 		}
@@ -146,38 +149,33 @@ public class TimeILPSolver extends ILPSolver {
 				
 			}
 		}
-
+//
 		//delta definition constraints
 		for(int k=0;k<ins.getMaxClusterNumber();++k){
 			expr=solver.numExpr();
 			for(int i=0;i<ins.getNumNodes();++i){				
-				expr=solver.sum(expr,nodeUsage[k][i]);				
+				expr=solver.sum(expr,y.get(k,i));				
 			}
-			solver.addLe(solver.diff(expr,ins.getLambda()),dp.get(k));
-			solver.addLe(solver.diff(ins.getLambda(),expr),dm.get(k));
+			solver.addLe(solver.diff(expr,ins.getLambda()),d.get(k));
+			solver.addGe(solver.diff(expr,ins.getLambda()),solver.prod(-1,d.get(k)));
 		}
 
-		//y definition constraints
+		//w definition constraints
 		for(int k=0;k<ins.getMaxClusterSize();++k){
 			for(OrderedPair p:fp){
-				IloNumExpr niExpr=solver.numExpr();
-				for(int v:ins.getOutcut(p.i))
-					niExpr=solver.sum(niExpr,x.get(k,v,p.i));
-				niExpr=solver.sum(niExpr,r.get(k,p.i));
-				IloNumExpr njExpr=solver.numExpr();
-				for(int v:ins.getOutcut(p.j)){
-					njExpr=solver.sum(njExpr,x.get(k,v,p.j));
-				}
-				njExpr=solver.sum(njExpr,r.get(k,p.j));
-				solver.addGe(y.get(p.i,p.j),solver.diff(solver.sum(niExpr,njExpr),1));
+				expr=solver.numExpr();
+				expr=solver.sum(expr,y.get(k,p.i),y.get(k, p.j));
+				expr=solver.diff(expr, 1);
+				solver.addGe(w.get(p.i,p.j),expr);
 			}
 		}
 		
 		if(isActiveExtension(Extension.ROOT_MINIMIZATION_CONSTRAINTS)){
 			for(int k=0;k<ins.getMaxClusterNumber();++k){
-				for(OrderedPair p: fp){
-					expr=solver.sum(nodeUsage[k][p.i],r.get(k,p.j));
-					solver.addLe(expr, 1);
+				for(int i=0;i<ins.getNumNodes();++i){
+					for(int j=i+1;j<ins.getNumNodes();++j){
+						solver.addLe(solver.sum(y.get(k, i),x.get(k, superRoot, j)),1);
+					}
 				}
 			}			
 		}
@@ -187,7 +185,7 @@ public class TimeILPSolver extends ILPSolver {
 			for(int k=0;k<ins.getMaxClusterNumber();++k){
 				expr=solver.numExpr();
 				for(int i=0;i<=k-1;++i){					
-					expr=solver.sum(expr,nodeUsage[k][i]);
+					expr=solver.sum(expr,y.get(k,i));
 				}
 				solver.addEq(expr,0);
 			}
@@ -196,11 +194,11 @@ public class TimeILPSolver extends ILPSolver {
 				for(int i=k;i<ins.getNumNodes();++i){
 					IloNumExpr lhs=solver.numExpr();
 					for(int k1=k;k<ins.getMaxClusterNumber();++k){
-						lhs=solver.sum(lhs,nodeUsage[k1][i]);
+						lhs=solver.sum(lhs,y.get(k,i));
 					}
 					IloNumExpr rhs=solver.numExpr();
 					for(int g=k-1;g<i;++g){
-						rhs=solver.sum(rhs,nodeUsage[k-1][g]);
+						rhs=solver.sum(rhs,y.get(k-1,g));
 					}
 					solver.addLe(lhs, rhs);
 				}
@@ -217,8 +215,9 @@ public class TimeILPSolver extends ILPSolver {
 			//Add branching priorities to the root variables
 			for(int k=0;k<ins.getMaxClusterNumber();++k)			
 				for(int i=0;i<ins.getNumNodes();++i)
-					solver.setPriority(r.get(k,i), 100);			
-		}
+					solver.setPriority(x.get(k,superRoot,i), 100);			
+		}		
+		solver.exportModel("model.lp");
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());
@@ -228,18 +227,21 @@ public class TimeILPSolver extends ILPSolver {
 		if(solver.getStatus() == IloCplex.Status.Feasible || solver.getStatus() == IloCplex.Status.Optimal){
 			for(int k=0;k<ins.getMaxClusterNumber();++k){
 				for(int v=0;v<ins.getNumNodes();++v){
-					if(FloatUtils.eq(solver.getValue(nodeUsage[k][v]),1.0)){
+					if(FloatUtils.eq(solver.getValue(y.get(k,v)),1.0)){
 						sol.insert(k, v);					
 					}
 				}
 			}
 		}
 		
-//		x.printNonNegative(solver);
+		x.printNonNegative(solver);
+		d.printNonNegative(solver);
+		w.printNonNegative(solver);
 //		r.printNonNegative(solver);
 //		u.printNonNegative(solver);
 //		dp.printNonNegative(solver);
 //		dm.printNonNegative(solver);
+		
 
 		return solver.getObjValue();
 	}
