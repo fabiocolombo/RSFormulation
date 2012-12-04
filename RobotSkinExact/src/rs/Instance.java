@@ -224,6 +224,10 @@ public class Instance {
 				ins.p.add(new OrderedPair(ni,nj));
 			}
 		}
+		
+		//limit the size of the cluster
+		if(ins.getMaxClusterSize() > ins.getNumNodes())
+			ins.maxClusterSize=ins.getNumNodes();
 			
 		
 		return ins;
@@ -312,6 +316,9 @@ public class Instance {
 				ins.p.add(new OrderedPair(ni,nj));
 			}
 		}
+		//limit the size of the cluster
+		if(ins.getMaxClusterSize() > ins.getNumNodes())
+			ins.maxClusterSize=ins.getNumNodes();
 		return ins;
 	}
 	
