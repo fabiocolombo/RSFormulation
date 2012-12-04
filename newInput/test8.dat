@@ -5,7 +5,7 @@
  *********************************************/
 
 N = 6; //number of nodes
-C = 10; //maximum cluster size, must be C > 1
+C = 4; //maximum cluster size, must be C > 1
 MC = 2; //number of clusters
 lambda = 3; //target cluster size, must be 1 < l <= C
 
