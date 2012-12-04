@@ -221,11 +221,12 @@ public class HopILPSolver extends ILPSolver {
 			for(int k=0;k<ins.getMaxClusterNumber();++k)			
 				for(int i=0;i<ins.getNumNodes();++i)
 					solver.setPriority(y.get(k,1,i), 100);			
-		}
-		solver.exportModel("model.lp");
+		}		
+		solver.setParam(IloCplex.IntParam.ParallelMode, 1);
 		solver.solve();
 		y.printNonNegative(solver);
 		f.printNonNegative(solver);
+		
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());
 		System.out.println("LB="+solver.getBestObjValue());

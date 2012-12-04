@@ -218,6 +218,7 @@ public class TimeILPSolver extends ILPSolver {
 					solver.setPriority(x.get(k,superRoot,i), 100);			
 		}		
 		solver.exportModel("model.lp");
+		solver.setParam(IloCplex.IntParam.ParallelMode, 1);
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());

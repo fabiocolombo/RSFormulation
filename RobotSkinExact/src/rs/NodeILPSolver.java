@@ -207,6 +207,7 @@ public class NodeILPSolver extends ILPSolver {
 		}
 		
 		solver.setParam(IloCplex.DoubleParam.TiLim, timeout);
+		solver.setParam(IloCplex.IntParam.ParallelMode, 1);
 		solver.solve();
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());

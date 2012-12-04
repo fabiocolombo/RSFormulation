@@ -206,9 +206,8 @@ public class GroupILPSolver extends ILPSolver{
 				for(int i=0;i<ins.getNumNodes();++i)
 					solver.setPriority(r.get(k,i), 100);			
 		}
+		solver.setParam(IloCplex.IntParam.ParallelMode, 1);
 		solver.solve();
-		f.printNonNegative(solver);
-		y.printNonNegative(solver);
 		System.out.println("STATE="+solver.getStatus());
 		System.out.println("NN="+solver.getNnodes());
 		System.out.println("LB="+solver.getBestObjValue());
